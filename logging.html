@@ -1,0 +1,48 @@
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="{% static 'js/ifvisible.js' %}"></script>
+<script src="{% static 'js/timeme.js' %}"></script>
+
+<script type="text/javascript">
+
+TimeMe.setIdleDurationInSeconds(60);
+TimeMe.setCurrentPageName("assigments");
+TimeMe.initialize();
+
+//this was used server side functions on my project to check for possible
+//re-posting because of errors on the backend
+var generateUid = function (separator) {
+    var delim = separator || "-";
+
+    function S4 () {
+        return(((1 + Math.random()) * 0x10000 ) | 0).toString(16).substring(1);
+    }
+
+    return (S4() + S4() + delim + S4() + delim + S4() + delim + S4() + delim + S4() + S4() + S4());
+};
+
+//ajax function sending a post request to the server
+window.onbeforeunload = function (event) {
+    var timeSpentOnPage = TimeMe.getTimeOnCurrentPageInSeconds();
+    $.ajax({
+        // 'home_timer' is a django view that handled the post request
+        // set url paremeter accordingly
+        url:'/home_timer/',
+        type:"POST",
+        //Add post data here. Included something to indicate what page
+        //the user was on, it may be as simple is 'window.location.href'
+        //but it needs to be clear to us what the page was
+        //Additionally, I use page request info on the server side to access the user's id
+        //which is why you don't see it below.  The way in which you choose to include user ids is
+        //going to depend largely on the framework you are using.
+        data: {
+            loc: window.location.href,
+            time: timeSpentOnPage,
+            //Cross Site Request Forgery protection used on backend of form submissions
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            token: generateUid(),
+        }
+    });
+};
+
+</script>
